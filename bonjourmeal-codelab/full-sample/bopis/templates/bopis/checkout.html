@@ -1,0 +1,81 @@
+{% load static %}
+<html>
+<title>Bonjour Meal: Checkout</title>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+</head>
+<body>
+
+    <nav>
+        <div class="nav-wrapper light-blue darken-4">
+            <a href="#" class="brand-logo">&nbsp;Bonjour Meal</a>
+        </div>
+    </nav>
+
+    <div class="card-panel grey lighten-4">
+
+        <p><b>Your Shopping Cart</b></p>
+
+        {% for item in items %}
+        <div class="card blue-grey darken-1">
+            <div class="card-content white-text">
+                <span class="card-title">{{item.item.name}}</span>
+
+                <div>
+                    <p>Quantity: {{item.quantity}}</p>
+                    <p>Price per unit: ${{item.item.price}} USD</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+
+        <div>
+            Subtotal: ${{subtotal}} USD
+            <br/>
+            Tax: ${{tax}} USD
+            <br/>
+            Total: ${{total}} USD
+            <br/><br/>
+            <button class="waves-effect waves-light btn" id="checkout-button">Checkout</button>
+
+        </div>
+    </div>
+    <script type="text/javascript">
+        // Create an instance of the Stripe object with your publishable API key
+        var stripe = Stripe('STRIPE_PUBLIC_KEY_HERE');
+        var checkoutButton = document.getElementById('checkout-button');
+
+        checkoutButton.addEventListener('click', function() {
+
+          // Create a new Checkout Session using the server-side endpoint you
+          // created in step 3.
+          fetch('/bopis/create-checkout-session?conversation_id=' + window.location.href.split('/')[5], {
+            method: 'POST',
+          })
+          .then(function(response) {
+
+            return response.json();
+          })
+          .then(function(session) {
+            return stripe.redirectToCheckout({ sessionId: session.id });
+          })
+          .then(function(result) {
+            // If `redirectToCheckout` fails due to a browser or network
+            // error, you should display the localized error message to your
+            // customer using `error.message`.
+            if (result.error) {
+              alert(result.error.message);
+            }
+          })
+          .catch(function(error) {
+            console.error('Error:', error);
+          });
+        });
+      </script>
+</body>
+</html>

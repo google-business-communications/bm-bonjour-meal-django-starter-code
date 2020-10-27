@@ -1,0 +1,24 @@
+{
+    "inventory": [
+        {
+            "name": "Ham and cheese sandwich",
+            "price": 6.99,
+            "image_url": "https://storage.googleapis.com/bonjour-rail.appspot.com/ham-and-cheese.png"
+        },
+        {
+            "name": "Chicken veggie wrap",
+            "price": 9.99,
+            "image_url": "https://storage.googleapis.com/bonjour-rail.appspot.com/chicken-veggie-wrap.png"
+        },
+        {
+            "name": "Assorted cheese plate",
+            "price": 7.99,
+            "image_url": "https://storage.googleapis.com/bonjour-rail.appspot.com/assorted-cheese-plate.png"
+        },
+        {
+            "name": "Apple walnut salad",
+            "price": 12.99,
+            "image_url": "https://storage.googleapis.com/bonjour-rail.appspot.com/apple-walnut-salad.png"
+        }
+    ]
+}
