@@ -15,8 +15,15 @@ The sample can be adapted to your infrastructure, enabling you to launch a
 Business Messages experience to engage customers in social commerce with your
 company.
 
+# Screencast
+
+View a screencast of this sample in action.
+
+[![Screencast of Bonjour Meal Sample](./bonjourmeal-codelab/assets/screencast-screenshot.png)](https://developers.google.com/business-communications/business-messages/files/bonjourmeal-screencast.mp4)
+
 # Codelab tutorial
 See our [codelab](https://codelabs.developers.google.com/) tutorial for
-instructions on how to deploy the application and interact with the
-conversational surface through Business Messages.
+detailed instructions on how build this sample and deploy it to Google Cloud App
+Engine. Once deployed you can interact with the conversational surface through
+Business Messages.
 
