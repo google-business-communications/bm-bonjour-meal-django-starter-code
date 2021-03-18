@@ -35,6 +35,7 @@ from businessmessages.businessmessages_v1_messages import (
 
 # The location of the service account credentials
 SERVICE_ACCOUNT_LOCATION = 'resources/bm-agent-service-account-credentials.json'
+INVENTORY_FILE = 'resources/inventory.json'
 
 # Set of commands the bot understands
 CMD_RICH_CARD = 'card'
