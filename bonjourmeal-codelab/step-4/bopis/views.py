@@ -30,11 +30,13 @@ from businessmessages.businessmessages_v1_messages import (
     BusinessMessagesSuggestion, BusinessMessagesSuggestedAction,
     BusinessMessagesSuggestedReply)
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from google.cloud import datastore
 from google.oauth2 import service_account
 from oauth2client.service_account import ServiceAccountCredentials
+import stripe
 
 # The location of the service account credentials
 SERVICE_ACCOUNT_LOCATION = 'resources/bm-agent-service-account-credentials.json'
@@ -51,6 +53,13 @@ CMD_ADD_ITEM = 'add-item'
 CMD_DEL_ITEM = 'del-item'
 CMD_SHOW_CART = 'show-cart'
 CMD_GET_CART_PRICE = 'show-cart-price'
+
+# Place the domain where your web application is reachable here.
+YOUR_DOMAIN = '<YOUR APPLICATION_DOMAIN_HERE>'
+
+# Place your stripe API key here.
+stripe.api_key = '<SECRET_STRIPE_KEY_HERE>'
+STRIPE_PUBLIC_KEY = '<PUBLIC_STRIPE_KEY_HERE>'
 
 # Images used in cards and carousel examples
 SAMPLE_IMAGES = [
@@ -355,7 +364,16 @@ def send_shopping_cart_total_price(conversation_id):
   message_obj = BusinessMessagesMessage(
       messageId=str(uuid.uuid4().int),
       representative=BOT_REPRESENTATIVE,
-      text=f'Your cart\'s total price is ${cart_price}.')
+      text=f'Your cart\'s total price is ${cart_price}.',
+      suggestions=[
+          BusinessMessagesSuggestion(
+              action=BusinessMessagesSuggestedAction(
+                  text='Checkout',
+                  postbackData='checkout',
+                  openUrlAction=BusinessMessagesOpenUrlAction(
+                      url=f'{YOUR_DOMAIN}/checkout/{conversation_id}'))),
+      ]
+    )
 
   send_message(message_obj, conversation_id)
 
@@ -753,3 +771,132 @@ def landing_placeholder(request):
     the Test URLs for the agent you have created as described in the codelab
     <a href='#'>here</a>.
   """)
+
+
+def send_checkout_msg(conversation_id):
+  """Sends the message received from the user back to the user.
+
+  Args:
+    conversation_id (str): The unique id for this user and agent.
+  """
+  message_obj = BusinessMessagesMessage(
+      messageId=str(uuid.uuid4().int),
+      representative=BOT_REPRESENTATIVE,
+      text='If you have any questions about checkout, we are here for you!')
+
+  send_message(message_obj, conversation_id)
+
+
+def payment_success(request, conversation_id):
+  """Sends a notification to the user prompting them back into the conversation.
+
+  Args:
+    request (HttpRequest): Incoming Django request object
+    conversation_id (str): The unique id for this user and agent.
+
+  Returns:
+    Obj (HttpResponse): Returns an HTTPResponse to the browser
+  """
+  message_obj = BusinessMessagesMessage(
+      messageId=str(uuid.uuid4().int),
+      representative=BOT_REPRESENTATIVE,
+      suggestions=[
+          BusinessMessagesSuggestion(
+              reply=BusinessMessagesSuggestedReply(
+                  text='Check on order', postbackData='check-order')),
+      ],
+      text='Awesome it looks like we\'ve received you\'re payment.')
+
+  send_message(message_obj, conversation_id)
+
+  return render(request, 'bopis/success.html')
+
+
+def payment_cancel(request, conversation_id):
+  """Sends a notification to the user prompting them back into the conversation.
+
+  Args:
+    request (HttpRequest): Incoming Django request object
+    conversation_id (str): The unique id for this user and agent.
+
+  Returns:
+    Obj (HttpResponse): Returns an HTTPResponse to the browser
+  """
+  message_obj = BusinessMessagesMessage(
+      messageId=str(uuid.uuid4().int),
+      representative=BOT_REPRESENTATIVE,
+      suggestions=[
+          BusinessMessagesSuggestion(
+              action=BusinessMessagesSuggestedAction(
+                  text='Checkout',
+                  postbackData='checkout',
+                  openUrlAction=BusinessMessagesOpenUrlAction(
+                      url=f'{YOUR_DOMAIN}/checkout/{conversation_id}'))),
+      ],
+      text='It looks like there was a problem with checkout. Try again?')
+
+  send_message(message_obj, conversation_id)
+
+  return render(request, 'bopis/cancel.html')
+
+
+def payment_checkout(request, conversation_id):
+  """Sends the user to a payment confirmation page before the payment portal.
+
+  Args:
+    request (HttpRequest): Incoming Django request object
+    conversation_id (str): The unique id for this user and agent.
+
+  Returns:
+    Obj (HttpResponse): Returns an HTTPResponse to the browser
+  """
+
+  cart_price = get_cart_price(conversation_id)
+  context = {'conversation_id': conversation_id,
+             'stripe_public_key': STRIPE_PUBLIC_KEY,
+             'cart_price': cart_price
+            }
+  return render(request, 'bopis/checkout.html', context)
+
+
+@csrf_exempt
+def create_checkout_session(request, conversation_id):
+  """Creates a Stripe session to start a payment from the conversation.
+
+  Args:
+    request (HttpRequest): Incoming Django request object
+    conversation_id (str): The unique id for this user and agent.
+
+  Returns:
+    Obj (HttpResponse): Returns an HTTPResponse to the browser
+  """
+  cart_price = get_cart_price(conversation_id)
+  try:
+    checkout_session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[
+            {
+                'price_data': {
+                    'currency': 'usd',
+                    'unit_amount': int(cart_price*100),
+                    'product_data': {
+                        'name': 'Bonjour Meal Checkout',
+                        'images': ['https://storage.googleapis.com/bonjour-rail.appspot.com/apple-walnut-salad.png'],
+                    },
+                },
+                'quantity': 1,
+            },
+        ],
+        mode='payment',
+        success_url=YOUR_DOMAIN + '/success/' + conversation_id,
+        cancel_url=YOUR_DOMAIN + '/cancel/' + conversation_id,
+    )
+
+    return JsonResponse({
+        'id': checkout_session.id
+    })
+
+  except Exception as e:
+    # Handle exceptions according to your payment processor's documentation
+    # https://stripe.com/docs/api/errors/handling?lang=python
+    return HttpResponse(e)
