@@ -425,7 +425,7 @@ def get_menu_carousel():
                 BusinessMessagesSuggestion(
                     reply=BusinessMessagesSuggestedReply(
                         text='Add item',
-                        postbackData=f'{CMD_ADD_ITEM}-{item["id"]}'))
+                        postbackData='{'+f'"action":"{CMD_ADD_ITEM}","item_name":"{item["id"]}"'+'}'))
             ],
             media=BusinessMessagesMedia(
                 height=BusinessMessagesMedia.HeightValueValuesEnum.MEDIUM,
@@ -483,9 +483,10 @@ def update_shopping_cart(conversation_id, message):
 
   inventory = get_inventory_data()
 
-  cart_request = message.split('-')
-  cart_cmd = cart_request[0]
-  cart_item = cart_request[2]
+  cart_request = json.loads(message)
+
+  cart_cmd = cart_request["action"]
+  cart_item = cart_request["item_name"]
 
   item_name = inventory['food'][int(cart_item)]['name']
 
@@ -495,19 +496,19 @@ def update_shopping_cart(conversation_id, message):
   result = client.get(key)
 
   if result is None:
-    if cart_cmd == 'add':
+    if cart_cmd == CMD_ADD_ITEM:
       entity.update({item_name: 1})
-    elif cart_cmd == 'del':
+    elif cart_cmd == CMD_DEL_ITEM:
       # The user is trying to delete an item from an empty cart. Pass and skip
       pass
   else:
-    if cart_cmd == 'add':
+    if cart_cmd == CMD_ADD_ITEM:
       if result.get(item_name) is None:
         result[item_name] = 1
       else:
         result[item_name] = result[item_name] + 1
 
-    elif cart_cmd == 'del':
+    elif cart_cmd == CMD_DEL_ITEM:
       if result.get(item_name) is None:
         # The user is trying to remove an item that's no in the shopping cart.
         # Pass and skip
@@ -520,7 +521,7 @@ def update_shopping_cart(conversation_id, message):
     entity.update(result)
   client.put(entity)
 
-  if cart_cmd == 'add':
+  if cart_cmd == CMD_ADD_ITEM:
     message = 'Great! You\'ve added an item to the cart.'
   else:
     message = 'You\'ve removed an item from the cart.'
@@ -571,7 +572,7 @@ def send_shopping_cart(conversation_id):
               text='See the menu', postbackData=CMD_SHOW_PRODUCT_CATALOG)),
   ]
 
-  if len(result.items()) == 0:
+  if result is None or len(result.items()) == 0:
     message_obj = BusinessMessagesMessage(
         messageId=str(uuid.uuid4().int),
         representative=BOT_REPRESENTATIVE,
@@ -595,7 +596,7 @@ def send_shopping_cart(conversation_id):
                       BusinessMessagesSuggestion(
                           reply=BusinessMessagesSuggestedReply(
                               text='Remove one',
-                              postbackData=f'{CMD_DEL_ITEM}-{product_id}'))
+                              postbackData='{'+f'"action":"{CMD_DEL_ITEM}","item_name":"{product_id}"'+'}'))
                   ],
                   media=BusinessMessagesMedia(
                       height=BusinessMessagesMedia.HeightValueValuesEnum.MEDIUM,
@@ -627,7 +628,7 @@ def send_shopping_cart(conversation_id):
                   BusinessMessagesSuggestion(
                       reply=BusinessMessagesSuggestedReply(
                           text='Remove one',
-                          postbackData=f'{CMD_DEL_ITEM}-{product_id}'))
+                          postbackData='{'+f'"action":"{CMD_DEL_ITEM}","item_name":"{product_id}"'+'}'))
               ],
               media=BusinessMessagesMedia(
                   height=BusinessMessagesMedia.HeightValueValuesEnum.MEDIUM,
