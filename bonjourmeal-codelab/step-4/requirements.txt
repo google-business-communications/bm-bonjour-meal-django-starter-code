@@ -12,7 +12,7 @@ google-businessmessages==1.0.0
 google-cloud-core==1.6.0
 google-cloud-datastore==2.1.0
 googleapis-common-protos==1.53.0
-grpcio==1.36.1
+grpcio==1.53.0
 httplib2==0.19.0
 idna==2.10
 libcst==0.3.17
