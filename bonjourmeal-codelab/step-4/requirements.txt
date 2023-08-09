@@ -30,7 +30,7 @@ PyYAML==5.4.1
 requests==2.25.1
 rsa==4.7.2
 six==1.15.0
-sqlparse==0.4.1
+sqlparse==0.4.4
 typing-extensions==3.7.4.3
 typing-inspect==0.6.0
 urllib3==1.26.3
