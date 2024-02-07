@@ -1,4 +1,4 @@
-Django==3.0.8
+Django==3.2.24
 PyMySQL==0.10.0
 google-apitools
 google-auth-httplib2
