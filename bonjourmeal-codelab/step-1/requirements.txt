@@ -1,5 +1,5 @@
 Django==3.0.8
-PyMySQL==0.10.0
+PyMySQL==1.1.1
 google-apitools
 google-auth-httplib2
 google-businessmessages==1.0.0
